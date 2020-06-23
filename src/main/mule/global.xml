@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="e012f8a6-86f7-4aa6-8068-4ced331b3215" >
+		<http:listener-connection host="0.0.0.0" port="${port}" />
+	</http:listener-config>
+	<configuration-properties doc:name="Configuration properties" doc:id="b8d3bef4-7bcb-4e58-9603-c6126311dcbd" file="config.yaml" />
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="1a7ca0f9-10e3-4924-a29b-23d2298f599e" >
+		<db:my-sql-connection host="${db.host}" port="${db.port}" user="${db.username}" password="${db.password}" database="${db.database}" />
+	</db:config>
+	<configuration doc:name="Configuration" doc:id="64875d2a-b5dc-4aaa-be3d-3e2e087c81d9" defaultErrorHandler-ref="globalError_Handler" />
+	<error-handler name="globalError_Handler" doc:id="5fa79312-a4d5-4e17-a54e-8ae4273c4de3" >
+		<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="9c2089a4-d60a-46d5-a168-e7dc97af1fa2" type="ANY">
+			<ee:transform doc:name="Transform Message" doc:id="eff5383e-8ae5-40e0-821a-2c0361213bb9" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"Message" : "The Data you are looking for not available"
+}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+		</on-error-continue>
+	</error-handler>
+</mule>

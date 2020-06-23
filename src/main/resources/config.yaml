@@ -1,0 +1,12 @@
+port: "8082"
+default-eh-path: "/defaulteh"
+continue-eh-path: "/continueeh"
+propagate-eh-path: "/propagateeh"
+global-eh-path: "/globaleh"
+
+db: 
+  host: "localhost"
+  port: "3306"
+  username: "root"
+  password: "root"
+  database: "dbdemo"

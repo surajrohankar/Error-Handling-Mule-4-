@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<flow name="Default_Error-Handler" doc:id="32996601-ded6-47e5-a616-598aa967161b" initialState="started">
+		<http:listener doc:name="GET/data from DB" doc:id="3349627c-f6a8-4709-bc61-be455a4d67cf" config-ref="HTTP_Listener_config" path="${default-eh-path}">
+		</http:listener>
+		<db:select doc:name="Get Data" doc:id="7b5e5825-1b11-44a2-b137-d9b58e23ac97" config-ref="Database_Config">
+			<error-mapping targetType="APP:abc" />
+			<db:sql >select * from emp where name = :name</db:sql>
+			<db:input-parameters ><![CDATA[#['name': attributes.queryParams.name]]]></db:input-parameters>
+		</db:select>
+		<choice doc:name="Choice" doc:id="3d6a41c8-cdd9-4832-9e9b-a65b57671119">
+			<when expression="#[payload[0].name == null]">
+				<raise-error doc:name="Raise error" doc:id="cf67540e-3249-416f-8d4c-64b10e08c298" type="SURAJ:NOTFOUND" description="Data not found"/>
+			</when>
+			<otherwise >
+				<ee:transform doc:name="JSON Payload" doc:id="dbd5b91e-c7b5-417e-a4ce-107c6b64000f" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</otherwise>
+		</choice>
+		<logger level="INFO" doc:name="Payload" doc:id="67d7e37c-0def-47b8-a5b7-39a1729e00c8" message="#[payload]"/>
+	</flow>
+	<flow name="On-Error-Continue" doc:id="905d7fe2-9f8e-42a3-8523-c6fbdfefcb8d" initialState="started">
+		<http:listener doc:name="GET/data from DB" doc:id="34bff9eb-2224-4eab-a027-56af51f05f94" config-ref="HTTP_Listener_config" path="${continue-eh-path}" />
+		<db:select doc:name="GET Data" doc:id="36f06163-6f12-4405-a593-4245a24b4a10" config-ref="Database_Config" >
+			<error-mapping targetType="APP:abc" />
+			<db:sql >select * from emp where name = :name</db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	'name': attributes.queryParams.name
+}]]]></db:input-parameters>
+		</db:select>
+		<choice doc:name="Choice" doc:id="70b609b7-cd9f-4bea-a7b0-d3fb89bf3350" >
+			<when expression="#[payload[0].name == null]" >
+				<raise-error doc:name="Raise error if data not available" doc:id="c70741c4-0033-4822-9b63-b8868324c8e9" type="SURAJ:NOTFOUND" description="Data not found" />
+			</when>
+			<otherwise >
+				<ee:transform doc:name="JSON Payload" doc:id="cd4d2099-fe22-41f7-aaaf-0946f2fed0fd" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</otherwise>
+		</choice>
+		<logger level="INFO" doc:name="Payload" doc:id="2f9827f0-0294-4192-815e-10bf4ae7e7df" message="#[payload]" />
+		<error-handler>
+			<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="5909fa79-dc43-4c8d-b2d4-e09c9a11ca88" >
+				<set-payload value="Data not available in Database" doc:name="Error Message" doc:id="6a806eb8-ba22-483b-a9c8-e9073167a757" />
+			</on-error-continue>
+		</error-handler>
+	</flow>
+	<flow name="On-Error-Propagate" doc:id="295da695-a390-4771-9171-9b87d0e402a7" initialState="started">
+		<http:listener doc:name="GET/data from DB" doc:id="f59eae20-3841-4c67-af5c-ec56d80d1abf" config-ref="HTTP_Listener_config" path="${propagate-eh-path}" />
+		<db:select doc:name="GET Data" doc:id="f4197670-a1b1-4d25-b580-ef384d7a7b08" config-ref="Database_Config" >
+			<error-mapping targetType="APP:abc" />
+			<db:sql >select * from emp where name = :name</db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	'name': attributes.queryParams.name
+}]]]></db:input-parameters>
+		</db:select>
+		<choice doc:name="Choice" doc:id="da5f14b4-6faf-4f04-ba81-d95686fefeee" >
+			<when expression="#[payload[0].name == null]" >
+				<raise-error doc:name="Raise error if data not available" doc:id="25817efa-3949-4e3e-8445-94b8d0d6ca2a" type="SURAJ:NOTFOUND" description="Data not found" />
+			</when>
+			<otherwise >
+				<ee:transform doc:name="JSON Payload" doc:id="1a55d1be-6242-42fd-813a-8f1af064991e" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</otherwise>
+		</choice>
+		<logger level="INFO" doc:name="Payload" doc:id="a073d6df-22ef-4983-8083-9f866851a128" message="#[payload]" />
+		<error-handler>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="ad50d178-f3a7-46bc-840f-09b8e098c036" >
+				<logger level="INFO" doc:name="Logger" doc:id="cc5a336c-c212-4864-b753-454d530d6791" message="#[error.description]"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	<flow name="Global-Error-Handling" doc:id="58a0861b-4ada-4866-96f8-d549f9e39033" initialState="started">
+		<http:listener doc:name="GET/data from DB" doc:id="05186d53-1603-4ed9-9167-98826f431457" config-ref="HTTP_Listener_config" path="${global-eh-path}" />
+		<db:select doc:name="GET Data" doc:id="8f27fed3-afa0-4d45-853b-219ae17f3fef" config-ref="Database_Config" >
+			<error-mapping targetType="APP:abc" />
+			<db:sql >select * from emp where name = :name</db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	'name': attributes.queryParams.name
+}]]]></db:input-parameters>
+		</db:select>
+		<choice doc:name="Choice" doc:id="82a56b18-32fa-46fc-8f68-7633d2b6799a" >
+			<when expression="#[payload[0].name == null]" >
+				<raise-error doc:name="Raise error if data not available" doc:id="5c8be70b-5c9f-4197-a1e1-0e433d770617" type="SURAJ:NOTFOUND" description="Data not found" />
+			</when>
+			<otherwise >
+				<ee:transform doc:name="JSON Payload" doc:id="c102556a-ce94-4f11-b400-7737052a9d70" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</otherwise>
+		</choice>
+		<logger level="INFO" doc:name="Payload" doc:id="bf1eb57f-2be9-4f81-bece-c0c69e5b97ae" message="#[payload]" />
+	</flow>
+</mule>
